@@ -24,7 +24,9 @@ repositories {
 dependencies {
     implementation('org.springframework.boot:spring-boot-starter-data-rest')
     implementation('org.springframework.boot:spring-boot-starter-web')
+    implementation platform('software.amazon.awssdk:bom:2.10.45')
+    implementation 'software.amazon.awssdk:sns'
+    implementation 'software.amazon.awssdk:apache-client'
+    implementation 'software.amazon.awssdk:ses'
+    implementation 'com.sun.mail:javax.mail'
 }
-
-
-
