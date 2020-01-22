@@ -29,4 +29,6 @@ dependencies {
     implementation 'software.amazon.awssdk:apache-client'
     implementation 'software.amazon.awssdk:ses'
     implementation 'com.sun.mail:javax.mail'
+    compile group: 'org.springframework.cloud', name: 'spring-cloud-aws-messaging', version: '2.2.1.RELEASE'
+    compile group: 'org.springframework.cloud', name: 'spring-cloud-aws-autoconfigure', version: '2.2.1.RELEASE'
 }

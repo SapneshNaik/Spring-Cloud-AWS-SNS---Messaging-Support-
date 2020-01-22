@@ -1,6 +1,9 @@
 package com.kerneldev.demo;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.aws.messaging.core.NotificationMessagingTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,12 +32,16 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Properties;
 
-import static com.kerneldev.demo.AwsSnsUtilityMethods.getAwsCredentials;
-import static com.kerneldev.demo.AwsSnsUtilityMethods.getSnsClient;
+import static com.kerneldev.demo.AwsSnsUtilityMethods.*;
 
-
+@Component
 @RestController
 public class DemoController {
+
+
+    @Autowired
+    NotificationMessagingTemplate notificationMessagingTemplate;
+
     @RequestMapping("/createTopic")
     private String createTopic(@RequestParam("topic_name") String topicName) throws URISyntaxException {
         //topic name cannot contain spaces
@@ -62,14 +69,14 @@ public class DemoController {
 
 
     @RequestMapping("/addSubscribers")
-    private String addSubscriberToTopic(@RequestParam("arn") String arn) throws URISyntaxException {
+    private String addSubscriberToTopic(@RequestParam("arn") String arn, @RequestParam("email") String email) throws URISyntaxException {
 
         SnsClient snsClient = getSnsClient();
 
         final SubscribeRequest subscribeRequest = SubscribeRequest.builder()
                 .topicArn(arn)
                 .protocol("email")
-                .endpoint("sapnesh@kerneldev.com")
+                .endpoint(email)
                 .build();
 
         SubscribeResponse subscribeResponse = snsClient.subscribe(subscribeRequest);
@@ -91,41 +98,41 @@ public class DemoController {
     @RequestMapping("/sendEmail")
     private String sendEmail(@RequestParam("arn") String arn) throws URISyntaxException {
 
-        SnsClient snsClient = getSnsClient();
-
-        final SubscribeRequest subscribeRequest = SubscribeRequest.builder()
-                .topicArn(arn)
-                .protocol("email")
-                .endpoint("sapnesh@kerneldev.com")
-                .build();
-
+//        SnsClient snsClient = getSnsClient();
+//
         final String msg = "This Stack Abuse Demo email works!";
+//
+//        final PublishRequest publishRequest = PublishRequest.builder()
+//                .topicArn(arn)
+//                .subject("Stack Abuse Demo email")
+//                .message(msg)
+//                .build();
+//
+//
+//        PublishResponse publishResponse = snsClient.publish(publishRequest);
+//
+//
+//        if (publishResponse.sdkHttpResponse().isSuccessful()) {
+//            System.out.println("Message publishing successful");
+//        } else {
+//            throw new ResponseStatusException(
+//                    HttpStatus.INTERNAL_SERVER_ERROR, publishResponse.sdkHttpResponse().statusText().get()
+//            );
+//        }
+//
+//        snsClient.close();
 
-        final PublishRequest publishRequest = PublishRequest.builder()
-                .topicArn(arn)
-                .subject("Stack Abuse Demo email")
-                .message(msg)
-                .build();
+        this.notificationMessagingTemplate.sendNotification(arn,msg, "Stack Abuse Demo");
 
-
-        PublishResponse publishResponse = snsClient.publish(publishRequest);
-
-
-        if (publishResponse.sdkHttpResponse().isSuccessful()) {
-            System.out.println("Message publishing successful");
-        } else {
-            throw new ResponseStatusException(
-                    HttpStatus.INTERNAL_SERVER_ERROR, publishResponse.sdkHttpResponse().statusText().get()
-            );
-        }
-
-        snsClient.close();
-
-        return "Email sent to subscribers. Message ID: " + publishResponse.messageId();
+//        return "Email sent to subscribers. Message ID: " + publishResponse.messageId();
+        return "Email sent to subscribers";
     }
 
     @RequestMapping("/sendEmailWithAttachment")
-    private String sendEmailWithAttachment(@RequestParam("arn") String arn) throws URISyntaxException, MessagingException, IOException {
+    private String sendEmailWithAttachment(@RequestParam("arn") String arn,
+                                           @RequestParam("from") String fromEmail,
+                                           @RequestParam("to") String toEmail)
+            throws URISyntaxException, MessagingException, IOException {
 
         String subject = "Stack Abuse AWS SES Demo";
 
@@ -144,9 +151,9 @@ public class DemoController {
 
         // Add subject, from and to lines.
         message.setSubject(subject, "UTF-8");
-        message.setFrom(new InternetAddress("sapneshwk@gmail.com")); // you aws account email
+        message.setFrom(new InternetAddress(fromEmail)); // you aws account email
         message.setRecipients(Message.RecipientType.TO,
-                InternetAddress.parse("sapnesh@kerneldev.com")); // recipient email
+                InternetAddress.parse(toEmail)); // recipient email
 
         MimeMultipart msg_body = new MimeMultipart("alternative");
         MimeBodyPart wrap = new MimeBodyPart();
@@ -177,7 +184,8 @@ public class DemoController {
         SesClient sesClient = SesClient.builder()
                 .credentialsProvider(getAwsCredentials(
                         "Access Key ID",
-                        "Secret Key/"))
+                        "Secret Key"))
+//                .httpClient(getProxyHTTPClient("http://proxy.com"))
                 .region(Region.US_EAST_1) //Set your selected region
                 .build();
 

@@ -36,7 +36,7 @@ public class AwsSnsUtilityMethods {
      * @return
      * @throws URISyntaxException
      */
-    private static SdkHttpClient getProxyHTTPClient(String proxy) throws URISyntaxException {
+    public static SdkHttpClient getProxyHTTPClient(String proxy) throws URISyntaxException {
         URI proxyURI = new URI(proxy);
 
         // This HTTP Client supports system proxy
@@ -60,7 +60,7 @@ public class AwsSnsUtilityMethods {
         return SnsClient.builder()
                 .credentialsProvider(getAwsCredentials(
                         "Access Key ID",
-                        "Secret Key/"))
+                        "Secret Key"))
                 .region(Region.US_EAST_1) //Set your selected region
                 .build();
     }
